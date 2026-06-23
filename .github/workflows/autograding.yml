@@ -30,9 +30,9 @@ jobs:
     - name: Prepare Laravel Environment
       run: |
         cp .env.example .env
+        touch database/database.sqlite
         php artisan key:generate
         php artisan config:clear
-        php artisan cache:clear
 
     - name: Debug PHP and SQLite
       run: |
