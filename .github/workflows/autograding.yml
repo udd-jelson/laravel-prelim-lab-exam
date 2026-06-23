@@ -109,6 +109,10 @@ jobs:
         timeout: 60
         max-score: 20
 
+    - name: Show Laravel Log
+      if: failure()
+      run: cat storage/logs/laravel.log || true
+
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
