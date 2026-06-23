@@ -1,0 +1,123 @@
+name: Autograding Tests
+
+'on':
+- push
+- repository_dispatch
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, bcmath, sqlite, pdo_sqlite
+
+    - name: Install Composer Dependencies
+      run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Prepare Laravel Environment
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+        php artisan config:clear
+        php artisan cache:clear
+
+    - name: Debug PHP and SQLite
+      run: |
+        php -v
+        php -m | grep sqlite
+
+    - name: Pages Work
+      id: pages-work
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Pages Work
+        setup-command: ''
+        command: php artisan test --filter=home_about_and_contact_pages_are_accessible || (cat storage/logs/laravel.log && exit 1)
+        timeout: 60
+        max-score: 15
+
+    - name: Navigation Links
+      id: navigation-links
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Navigation Links
+        setup-command: ''
+        command: php artisan test --filter=navigation_links_are_visible_on_home_page || (cat storage/logs/laravel.log && exit 1)
+        timeout: 60
+        max-score: 10
+
+    - name: Students Table Columns
+      id: students-table-columns
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Students Table Columns
+        setup-command: ''
+        command: php artisan test --filter=students_table_exists_with_required_columns || (cat storage/logs/laravel.log && exit 1)
+        timeout: 60
+        max-score: 15
+
+    - name: Student Model Fillable
+      id: student-model-fillable
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Student Model Fillable
+        setup-command: ''
+        command: php artisan test --filter=student_model_has_correct_fillable_fields || (cat storage/logs/laravel.log && exit 1)
+        timeout: 60
+        max-score: 10
+
+    - name: Student Seeder
+      id: student-seeder
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Student Seeder
+        setup-command: ''
+        command: php artisan test --filter=student_seeder_inserts_at_least_three_records || (cat storage/logs/laravel.log && exit 1)
+        timeout: 60
+        max-score: 10
+
+    - name: Display Student Records
+      id: display-student-records
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Display Student Records
+        setup-command: ''
+        command: php artisan test --filter=students_page_displays_database_records || (cat storage/logs/laravel.log && exit 1)
+        timeout: 60
+        max-score: 20
+
+    - name: Add Student Form
+      id: add-student-form
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Add Student Form
+        setup-command: ''
+        command: php artisan test --filter=add_student_form_saves_a_new_student_record || (cat storage/logs/laravel.log && exit 1)
+        timeout: 60
+        max-score: 20
+
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        PAGES-WORK_RESULTS: "${{steps.pages-work.outputs.result}}"
+        NAVIGATION-LINKS_RESULTS: "${{steps.navigation-links.outputs.result}}"
+        STUDENTS-TABLE-COLUMNS_RESULTS: "${{steps.students-table-columns.outputs.result}}"
+        STUDENT-MODEL-FILLABLE_RESULTS: "${{steps.student-model-fillable.outputs.result}}"
+        STUDENT-SEEDER_RESULTS: "${{steps.student-seeder.outputs.result}}"
+        DISPLAY-STUDENT-RECORDS_RESULTS: "${{steps.display-student-records.outputs.result}}"
+        ADD-STUDENT-FORM_RESULTS: "${{steps.add-student-form.outputs.result}}"
+      with:
+        runners: pages-work,navigation-links,students-table-columns,student-model-fillable,student-seeder,display-student-records,add-student-form
