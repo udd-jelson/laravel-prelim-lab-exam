@@ -109,9 +109,35 @@ jobs:
         timeout: 60
         max-score: 20
 
-    - name: Show Laravel Log
+    - name: Debug Failure
       if: failure()
-      run: cat storage/logs/laravel.log || true
+      run: |
+        echo "Current directory:"
+        pwd
+
+        echo "Project files:"
+        ls -la
+
+        echo "Database folder:"
+        ls -la database || true
+
+        echo "Storage folder:"
+        ls -la storage || true
+
+        echo "Storage logs folder:"
+        ls -la storage/logs || true
+
+        echo "Environment file exists?"
+        ls -la .env || true
+
+        echo "PHP version:"
+        php -v
+
+        echo "SQLite extensions:"
+        php -m | grep -i sqlite || true
+
+        echo "Laravel log content:"
+        cat storage/logs/laravel.log || echo "No laravel.log file found."
 
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
